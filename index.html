@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Previsioni Complete a 5 Giorni - Porto Garibaldi</title>
+    <title>Meteo Mare e Webcam - Porto Garibaldi / Lidi</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         body {
@@ -17,8 +17,67 @@
             text-align: center;
             padding-bottom: 20px;
             border-bottom: 2px solid #ddd;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
+        .section-title {
+            text-align: center;
+            color: #444;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto 40px auto;
+        }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .card h2 {
+            font-size: 1.2rem;
+            margin-top: 0;
+            color: #0056b3;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        /* Stili Webcam */
+        .webcam-container {
+            width: 100%;
+            height: 250px;
+            background: #e9ecef;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .webcam-image { width: 100%; height: 100%; object-fit: contain; }
+        .webcam-iframe { width: 100%; height: 100%; border: none; }
+        .btn {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: auto;
+            transition: 0.2s;
+        }
+        .btn:hover { background-color: #0056b3; }
+        
+        /* Stili Grafici */
         #charts-container {
             display: grid;
             grid-template-columns: 1fr;
@@ -26,13 +85,13 @@
             max-width: 1200px;
             margin: 0 auto;
         }
-        .card {
+        .chart-card {
             background: #fff;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             padding: 25px;
         }
-        .card h2 {
+        .chart-card h2 {
             font-size: 1.5rem;
             margin-top: 0;
             color: #0056b3;
@@ -58,10 +117,40 @@
 <body>
 
 <header>
-    <h1>Previsioni Complete a 5 Giorni - Porto Garibaldi</h1>
-    <p>Onde, Vento e Temperature (Fonte Modelli Open-Meteo)</p>
+    <h1>Cruscotto Meteo Mare - Porto Garibaldi / Lidi</h1>
+    <p>Monitoraggio in tempo reale e Modelli Previsionali Open-Meteo</p>
 </header>
 
+<h2 class="section-title">Monitoraggio Live</h2>
+<div class="grid-container">
+
+    <div class="card">
+        <h2>Webcam Lido di Spina (Baia di Maui)</h2>
+        <div class="webcam-container">
+            <img class="webcam-image" src="http://www.baiadimaui.eu/StazioneMeteo2018/baiadimaui_webcam_2018.jpg" alt="Webcam Mare Spina">
+        </div>
+        <a href="http://www.baiadimaui.eu/StazioneMeteo2018/baiadimaui_webcam_2018.jpg" target="_blank" class="btn">Apri Immagine Originale</a>
+    </div>
+
+    <div class="card">
+        <h2>Nuova Webcam (WorldCam)</h2>
+        <div class="webcam-container">
+            <iframe class="webcam-iframe" src="https://worldcam.eu/click/url?code=MjE1MTM"></iframe>
+        </div>
+        <a href="https://worldcam.eu/click/url?code=MjE1MTM" target="_blank" class="btn">Apri sul sito WorldCam</a>
+    </div>
+
+    <div class="card">
+        <h2>Webcam Lido delle Nazioni (Skyline)</h2>
+        <div class="webcam-container" style="flex-direction: column; padding: 20px; text-align: center;">
+            <p>⚠️ Flusso video crittografato dal fornitore e non incorporabile.</p>
+        </div>
+        <a href="https://www.skylinewebcams.com/it/webcam/italia/emilia-romagna/ferrara/lido-delle-nazioni.html" target="_blank" class="btn">Apri Webcam su Skyline</a>
+    </div>
+
+</div>
+
+<h2 class="section-title">Previsioni a 5 Giorni</h2>
 <div id="charts-container">
     <p style="text-align:center; font-size: 1.2rem;">Scaricamento dati in corso...</p>
 </div>
@@ -74,7 +163,6 @@
     async function load5DaysForecast() {
         const container = document.getElementById('charts-container');
         
-        // Aggiunti i parametri per la temperatura dell'aria (temperature_2m) e dell'acqua (sea_surface_temperature)
         const urlWeather = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,temperature_2m&timezone=${tz}&forecast_days=5`;
         const urlMarine = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,sea_surface_temperature&timezone=${tz}&forecast_days=5`;
 
@@ -89,7 +177,6 @@
 
             const daysData = {};
 
-            // Analizziamo i dati e li raggruppiamo per giorno
             dataW.hourly.time.forEach((timeStr, i) => {
                 const dateObj = new Date(timeStr);
                 const dateKey = timeStr.substring(0, 10);
@@ -105,7 +192,6 @@
                     };
                 }
 
-                // Prendiamo un dato ogni 3 ore per non affollare il grafico
                 if (dateObj.getHours() % 3 === 0) {
                     daysData[dateKey].times.push(dateObj.getHours() + ':00');
                     daysData[dateKey].wind.push(dataW.hourly.wind_speed_10m[i]);
@@ -116,12 +202,10 @@
                 }
             });
 
-            // Generiamo le schede e i grafici
             Object.values(daysData).forEach((day, index) => {
                 const card = document.createElement('div');
-                card.className = 'card';
+                card.className = 'chart-card';
                 
-                // Titolo del Giorno
                 const title = document.createElement('h2');
                 title.innerText = day.label.charAt(0).toUpperCase() + day.label.slice(1);
                 card.appendChild(title);
@@ -150,10 +234,8 @@
                 wrapper2.appendChild(canvas2);
                 card.appendChild(wrapper2);
 
-                // Aggiungiamo la scheda completata alla pagina
                 container.appendChild(card);
 
-                // Disegno Grafico 1 (Vento e Onde)
                 new Chart(canvas1, {
                     type: 'line',
                     data: {
@@ -185,20 +267,12 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                            yWave: {
-                                type: 'linear', position: 'left', min: 0,
-                                title: { display: true, text: 'Altezza Onde (m)' }
-                            },
-                            yWind: {
-                                type: 'linear', position: 'right', min: 0,
-                                title: { display: true, text: 'Velocità Vento (km/h)' },
-                                grid: { drawOnChartArea: false }
-                            }
+                            yWave: { type: 'linear', position: 'left', min: 0, title: { display: true, text: 'Altezza Onde (m)' } },
+                            yWind: { type: 'linear', position: 'right', min: 0, title: { display: true, text: 'Velocità Vento (km/h)' }, grid: { drawOnChartArea: false } }
                         }
                     }
                 });
 
-                // Disegno Grafico 2 (Temperature)
                 new Chart(canvas2, {
                     type: 'line',
                     data: {
@@ -207,7 +281,7 @@
                             {
                                 label: 'Temp. Aria (°C)',
                                 data: day.airTemp,
-                                borderColor: '#fd7e14', // Arancione
+                                borderColor: '#fd7e14',
                                 backgroundColor: 'transparent',
                                 borderWidth: 3,
                                 tension: 0.4,
@@ -217,13 +291,13 @@
                             {
                                 label: 'Temp. Acqua Superficiale (°C)',
                                 data: day.waterTemp,
-                                borderColor: '#20c997', // Verde Acqua
+                                borderColor: '#20c997',
                                 backgroundColor: 'transparent',
                                 borderWidth: 3,
                                 tension: 0.4,
                                 pointRadius: 4,
                                 pointBackgroundColor: '#20c997',
-                                spanGaps: true // Collega i punti se l'API non fornisce il dato per un orario
+                                spanGaps: true
                             }
                         ]
                     },
@@ -232,10 +306,7 @@
                         maintainAspectRatio: false,
                         scales: {
                             y: {
-                                type: 'linear',
-                                position: 'left',
-                                title: { display: true, text: 'Gradi Celsius (°C)' },
-                                // Per mantenere i grafici uniformi, creiamo un margine dinamico per l'asse Y
+                                type: 'linear', position: 'left', title: { display: true, text: 'Gradi Celsius (°C)' },
                                 suggestedMin: Math.min(...day.airTemp, ...day.waterTemp.filter(n=>n)) - 2,
                                 suggestedMax: Math.max(...day.airTemp, ...day.waterTemp.filter(n=>n)) + 2
                             }
