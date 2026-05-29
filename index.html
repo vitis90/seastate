@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previsioni Complete a 5 Giorni - Porto Garibaldi</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f3f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+        #charts-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 25px;
+        }
+        .card h2 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            color: #0056b3;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 250px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .chart-title {
+            font-size: 1rem;
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Previsioni Complete a 5 Giorni - Porto Garibaldi</h1>
+    <p>Onde, Vento e Temperature (Fonte Modelli Open-Meteo)</p>
+</header>
+
+<div id="charts-container">
+    <p style="text-align:center; font-size: 1.2rem;">Scaricamento dati in corso...</p>
+</div>
+
+<script>
+    const lat = 44.67;
+    const lon = 12.25;
+    const tz = "Europe%2FRome";
+
+    async function load5DaysForecast() {
+        const container = document.getElementById('charts-container');
+        
+        // Aggiunti i parametri per la temperatura dell'aria (temperature_2m) e dell'acqua (sea_surface_temperature)
+        const urlWeather = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,temperature_2m&timezone=${tz}&forecast_days=5`;
+        const urlMarine = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,sea_surface_temperature&timezone=${tz}&forecast_days=5`;
+
+        try {
+            const [resW, resM] = await Promise.all([fetch(urlWeather), fetch(urlMarine)]);
+            if (!resW.ok || !resM.ok) throw new Error("Errore nel download dei dati Open-Meteo");
+
+            const dataW = await resW.json();
+            const dataM = await resM.json();
+
+            container.innerHTML = '';
+
+            const daysData = {};
+
+            // Analizziamo i dati e li raggruppiamo per giorno
+            dataW.hourly.time.forEach((timeStr, i) => {
+                const dateObj = new Date(timeStr);
+                const dateKey = timeStr.substring(0, 10);
+                
+                if (!daysData[dateKey]) {
+                    daysData[dateKey] = {
+                        label: dateObj.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }),
+                        times: [],
+                        wind: [],
+                        wave: [],
+                        airTemp: [],
+                        waterTemp: []
+                    };
+                }
+
+                // Prendiamo un dato ogni 3 ore per non affollare il grafico
+                if (dateObj.getHours() % 3 === 0) {
+                    daysData[dateKey].times.push(dateObj.getHours() + ':00');
+                    daysData[dateKey].wind.push(dataW.hourly.wind_speed_10m[i]);
+                    daysData[dateKey].airTemp.push(dataW.hourly.temperature_2m[i]);
+                    
+                    daysData[dateKey].wave.push(dataM.hourly.wave_height[i]);
+                    daysData[dateKey].waterTemp.push(dataM.hourly.sea_surface_temperature[i]);
+                }
+            });
+
+            // Generiamo le schede e i grafici
+            Object.values(daysData).forEach((day, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                // Titolo del Giorno
+                const title = document.createElement('h2');
+                title.innerText = day.label.charAt(0).toUpperCase() + day.label.slice(1);
+                card.appendChild(title);
+
+                // --- GRAFICO 1: VENTO E ONDE ---
+                const title1 = document.createElement('div');
+                title1.className = 'chart-title';
+                title1.innerText = 'Vento e Altezza Onde';
+                card.appendChild(title1);
+
+                const wrapper1 = document.createElement('div');
+                wrapper1.className = 'chart-wrapper';
+                const canvas1 = document.createElement('canvas');
+                wrapper1.appendChild(canvas1);
+                card.appendChild(wrapper1);
+
+                // --- GRAFICO 2: TEMPERATURE ---
+                const title2 = document.createElement('div');
+                title2.className = 'chart-title';
+                title2.innerText = 'Temperature (Aria vs Acqua)';
+                card.appendChild(title2);
+
+                const wrapper2 = document.createElement('div');
+                wrapper2.className = 'chart-wrapper';
+                const canvas2 = document.createElement('canvas');
+                wrapper2.appendChild(canvas2);
+                card.appendChild(wrapper2);
+
+                // Aggiungiamo la scheda completata alla pagina
+                container.appendChild(card);
+
+                // Disegno Grafico 1 (Vento e Onde)
+                new Chart(canvas1, {
+                    type: 'line',
+                    data: {
+                        labels: day.times,
+                        datasets: [
+                            {
+                                label: 'Onde (m)',
+                                data: day.wave,
+                                type: 'line',
+                                borderColor: '#0056b3',
+                                backgroundColor: 'rgba(0, 86, 179, 0.2)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                yAxisID: 'yWave'
+                            },
+                            {
+                                label: 'Vento (km/h)',
+                                data: day.wind,
+                                type: 'bar',
+                                backgroundColor: 'rgba(23, 162, 184, 0.6)',
+                                borderColor: '#17a2b8',
+                                borderWidth: 1,
+                                yAxisID: 'yWind'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            yWave: {
+                                type: 'linear', position: 'left', min: 0,
+                                title: { display: true, text: 'Altezza Onde (m)' }
+                            },
+                            yWind: {
+                                type: 'linear', position: 'right', min: 0,
+                                title: { display: true, text: 'Velocità Vento (km/h)' },
+                                grid: { drawOnChartArea: false }
+                            }
+                        }
+                    }
+                });
+
+                // Disegno Grafico 2 (Temperature)
+                new Chart(canvas2, {
+                    type: 'line',
+                    data: {
+                        labels: day.times,
+                        datasets: [
+                            {
+                                label: 'Temp. Aria (°C)',
+                                data: day.airTemp,
+                                borderColor: '#fd7e14', // Arancione
+                                backgroundColor: 'transparent',
+                                borderWidth: 3,
+                                tension: 0.4,
+                                pointRadius: 4,
+                                pointBackgroundColor: '#fd7e14'
+                            },
+                            {
+                                label: 'Temp. Acqua Superficiale (°C)',
+                                data: day.waterTemp,
+                                borderColor: '#20c997', // Verde Acqua
+                                backgroundColor: 'transparent',
+                                borderWidth: 3,
+                                tension: 0.4,
+                                pointRadius: 4,
+                                pointBackgroundColor: '#20c997',
+                                spanGaps: true // Collega i punti se l'API non fornisce il dato per un orario
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                position: 'left',
+                                title: { display: true, text: 'Gradi Celsius (°C)' },
+                                // Per mantenere i grafici uniformi, creiamo un margine dinamico per l'asse Y
+                                suggestedMin: Math.min(...day.airTemp, ...day.waterTemp.filter(n=>n)) - 2,
+                                suggestedMax: Math.max(...day.airTemp, ...day.waterTemp.filter(n=>n)) + 2
+                            }
+                        }
+                    }
+                });
+            });
+
+        } catch (error) {
+            container.innerHTML = `<p style="color:red; text-align:center;"><strong>Errore di connessione:</strong> ${error.message}</p>`;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", load5DaysForecast);
+</script>
+
+</body>
+</html>
