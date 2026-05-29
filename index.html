@@ -118,7 +118,7 @@
 <body>
 
 <header>
-    <h1>Cruscotto Meteo Mare - Porto Garibaldi / Lidi</h1>
+    <h1>Meteo Mare - Lidi Ferraresi</h1>
     <p>Monitoraggio in tempo reale e Modelli Previsionali Open-Meteo</p>
 </header>
 
@@ -135,8 +135,11 @@
 
     <div class="card">
         <h2>Webcam Lido degli Estensi (Feratel)</h2>
-        <div class="webcam-container">
-            <iframe class="webcam-iframe" src="https://www.feratel.com/webcams/italien/emilia-romagna/lido-degli-estensi-litorale?lg=de&cam=6051" title="Webcam Feratel"></iframe>
+        <div class="webcam-container" style="background-color: #000;">
+            <video class="webcam-cover" autoplay muted loop playsinline controls>
+                <source src="https://stsfc001.feratel.com/streams/latest/1/6051.mp4?dcsdesign=WTP_feratel.com" type="video/mp4">
+                Il tuo browser non supporta il tag video.
+            </video>
         </div>
         <a href="https://www.feratel.com/webcams/italien/emilia-romagna/lido-degli-estensi-litorale?lg=de&cam=6051" target="_blank" class="btn">Apri Webcam su Feratel</a>
     </div>
@@ -166,6 +169,7 @@
     async function load5DaysForecast() {
         const container = document.getElementById('charts-container');
         
+        // Fonti API: Open-Meteo Weather e Marine
         const urlWeather = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,temperature_2m&timezone=${tz}&forecast_days=5`;
         const urlMarine = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,sea_surface_temperature&timezone=${tz}&forecast_days=5`;
 
