@@ -135,11 +135,8 @@
 
     <div class="card">
         <h2>Webcam Lido degli Estensi (Feratel)</h2>
-        <div class="webcam-container" style="background-color: #000;">
-            <video class="webcam-cover" autoplay muted loop playsinline controls>
-                <source src="https://stsfc001.feratel.com/streams/latest/1/6051.mp4?dcsdesign=WTP_feratel.com" type="video/mp4">
-                Il tuo browser non supporta il tag video.
-            </video>
+        <div class="webcam-container">
+            <iframe class="webcam-iframe" src="https://www.feratel.com/webcams/italien/emilia-romagna/lido-degli-estensi-litorale?lg=de&cam=6051" title="Webcam Feratel" allow="autoplay; fullscreen"></iframe>
         </div>
         <a href="https://www.feratel.com/webcams/italien/emilia-romagna/lido-degli-estensi-litorale?lg=de&cam=6051" target="_blank" class="btn">Apri Webcam su Feratel</a>
     </div>
@@ -169,7 +166,6 @@
     async function load5DaysForecast() {
         const container = document.getElementById('charts-container');
         
-        // Fonti API: Open-Meteo Weather e Marine
         const urlWeather = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,temperature_2m&timezone=${tz}&forecast_days=5`;
         const urlMarine = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,sea_surface_temperature&timezone=${tz}&forecast_days=5`;
 
@@ -217,7 +213,6 @@
                 title.innerText = day.label.charAt(0).toUpperCase() + day.label.slice(1);
                 card.appendChild(title);
 
-                // --- GRAFICO 1: VENTO E ONDE ---
                 const title1 = document.createElement('div');
                 title1.className = 'chart-title';
                 title1.innerText = 'Vento e Altezza Onde';
@@ -229,7 +224,6 @@
                 wrapper1.appendChild(canvas1);
                 card.appendChild(wrapper1);
 
-                // --- GRAFICO 2: TEMPERATURE ---
                 const title2 = document.createElement('div');
                 title2.className = 'chart-title';
                 title2.innerText = 'Temperature (Aria vs Acqua)';
@@ -249,7 +243,7 @@
                         labels: day.times,
                         datasets: [
                             {
-                                label: 'Onde (m)',
+                                label: 'Onde (m)', label: 'Onde (m)',
                                 data: day.wave,
                                 type: 'line',
                                 borderColor: '#0056b3',
